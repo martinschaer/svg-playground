@@ -1,8 +1,8 @@
-// import { useState } from 'react'
+import React from "react";
 import "./App.css";
 
-function App() {
+const App: React.FC = () => {
   return <div className="container mx-auto">Hola</div>;
-}
+};
 
 export default App;
