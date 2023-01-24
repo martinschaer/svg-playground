@@ -1,5 +1,24 @@
 import { Command } from "../constants/Types";
 
+export const getArgsSize = (type: Command["type"]): number => {
+  switch (type) {
+    case "M":
+    case "m":
+    case "L":
+    case "l":
+      return 3;
+    case "H":
+    case "h":
+    case "V":
+    case "v":
+      return 2;
+    case "Z":
+    case "z":
+    default:
+      return 1;
+  }
+};
+
 // TODO: unit test
 export const commandToStr = (cmd: Command) => {
   let result = "";

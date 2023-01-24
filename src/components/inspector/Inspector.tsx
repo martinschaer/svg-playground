@@ -1,29 +1,6 @@
-import React, {
-  MouseEventHandler,
-  useMemo,
-  useState,
-  useCallback,
-} from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { Path, Command } from "../../constants/Types";
-
-const getArgsSize = (type: Command["type"]): number => {
-  switch (type) {
-    case "M":
-    case "m":
-    case "L":
-    case "l":
-      return 3;
-    case "H":
-    case "h":
-    case "V":
-    case "v":
-      return 2;
-    case "Z":
-    case "z":
-    default:
-      return 1;
-  }
-};
+import { getArgsSize } from "../../utils/svg";
 
 const handleKeys = ({
   code,
@@ -31,12 +8,14 @@ const handleKeys = ({
   posSet,
   cmd,
   onChange,
+  toggleEditMode,
 }: {
   code: string;
   pos: number;
   posSet: (x: number) => void;
   cmd: Command;
   onChange: (cmd: Command) => void;
+  toggleEditMode: () => void;
 }) => {
   if (code === "ArrowUp") {
     if (pos === 1 && "a" in cmd) {
@@ -54,19 +33,22 @@ const handleKeys = ({
     posSet((pos - 1) % getArgsSize(cmd.type));
   } else if (code === "ArrowRight") {
     posSet((pos + 1) % getArgsSize(cmd.type));
+  } else if (code === "Enter") {
+    posSet(0);
+    toggleEditMode();
   }
 };
 
 const InspectorCmd: React.FC<{
   cmd: Command;
-  onClick: MouseEventHandler;
+  editModeSet: (on: boolean) => void;
   editMode: boolean;
   onChange: (newCmd: Command) => void;
-}> = ({ cmd, onClick, editMode, onChange }) => {
+}> = ({ cmd, editModeSet, editMode, onChange }) => {
   const [pos, posSet] = useState<number>(0);
   const styles = useMemo(() => {
     let str =
-      "p-1 border border-black rounded leading-none flex gap-2 cursor-pointer";
+      "p-1 border border-black rounded leading-none flex gap-2 cursor-pointer focus:outline outline-cyan-400";
     if (editMode) {
       str += " bg-black text-white";
     }
@@ -76,16 +58,27 @@ const InspectorCmd: React.FC<{
   const onKeyDown: React.KeyboardEventHandler = useCallback(
     (event: React.KeyboardEvent) => {
       // console.log(event.code);
-      handleKeys({ code: event.code, pos, posSet, cmd, onChange });
+      handleKeys({
+        code: event.code,
+        pos,
+        posSet,
+        cmd,
+        onChange,
+        toggleEditMode: () => editModeSet(!editMode),
+      });
     },
-    [cmd, pos]
+    [cmd, pos, editMode]
   );
 
   return (
     <div
       className={styles}
-      onClick={onClick}
+      onFocus={() => {
+        editModeSet(true);
+        posSet(0);
+      }}
       onKeyDown={onKeyDown}
+      onBlur={() => editModeSet(false)}
       tabIndex={1}
     >
       {cmd.type === "M" ||
@@ -93,13 +86,13 @@ const InspectorCmd: React.FC<{
       cmd.type === "L" ||
       cmd.type === "l" ? (
         <>
-          <code className={editMode && pos === 0 ? "text-sky-400" : ""}>
+          <code className={editMode && pos === 0 ? "text-cyan-400" : ""}>
             {cmd.type}
           </code>
-          <code className={editMode && pos === 1 ? "text-sky-400" : ""}>
+          <code className={editMode && pos === 1 ? "text-cyan-400" : ""}>
             {cmd.a}
           </code>
-          <code className={editMode && pos === 2 ? "text-sky-400" : ""}>
+          <code className={editMode && pos === 2 ? "text-cyan-400" : ""}>
             {cmd.b}
           </code>
         </>
@@ -127,13 +120,13 @@ const InspectorCmd: React.FC<{
 interface PathProps {
   path: Path;
   editMode: boolean;
-  onClick: () => void;
+  editModeSet: (on: boolean) => void;
   onChange: (cmdIndex: number, newCmd: Command) => void;
 }
 const InspectorPath: React.FC<PathProps> = ({
   path,
   editMode,
-  onClick,
+  editModeSet,
   onChange,
 }) => {
   const [editingIndex, editingIndexSet] = useState(-1);
@@ -144,9 +137,9 @@ const InspectorPath: React.FC<PathProps> = ({
           key={i}
           cmd={cmd}
           editMode={editMode && editingIndex === i}
-          onClick={() => {
+          editModeSet={(on: boolean) => {
             editingIndexSet(editMode ? (i === editingIndex ? -1 : i) : i);
-            onClick();
+            editModeSet(on);
           }}
           onChange={(newCmd: Command) => onChange(i, newCmd)}
         />
@@ -168,7 +161,7 @@ const Inspector: React.FC<Props> = ({ paths, onChange }) => {
           key={i}
           path={path}
           editMode={editingIndex === i}
-          onClick={() => editingIndexSet(i)}
+          editModeSet={(on: boolean) => editingIndexSet(on ? i : -1)}
           onChange={(cmdIndex, newCmd) => onChange(i, cmdIndex, newCmd)}
         />
       ))}
