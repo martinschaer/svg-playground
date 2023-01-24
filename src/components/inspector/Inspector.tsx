@@ -12,16 +12,48 @@ const getArgsSize = (type: Command["type"]): number => {
     case "m":
     case "L":
     case "l":
-      return 2;
+      return 3;
     case "H":
     case "h":
     case "V":
     case "v":
-      return 1;
+      return 2;
     case "Z":
     case "z":
     default:
-      return 0;
+      return 1;
+  }
+};
+
+const handleKeys = ({
+  code,
+  pos,
+  posSet,
+  cmd,
+  onChange,
+}: {
+  code: string;
+  pos: number;
+  posSet: (x: number) => void;
+  cmd: Command;
+  onChange: (cmd: Command) => void;
+}) => {
+  if (code === "ArrowUp") {
+    if (pos === 1 && "a" in cmd) {
+      onChange({ ...cmd, a: cmd.a + 1 });
+    } else if (pos === 2 && "b" in cmd) {
+      onChange({ ...cmd, b: cmd.b + 1 });
+    }
+  } else if (code === "ArrowDown") {
+    if (pos === 1 && "a" in cmd) {
+      onChange({ ...cmd, a: cmd.a - 1 });
+    } else if (pos === 2 && "b" in cmd) {
+      onChange({ ...cmd, b: cmd.b - 1 });
+    }
+  } else if (code === "ArrowLeft") {
+    posSet((pos - 1) % getArgsSize(cmd.type));
+  } else if (code === "ArrowRight") {
+    posSet((pos + 1) % getArgsSize(cmd.type));
   }
 };
 
@@ -31,7 +63,7 @@ const InspectorCmd: React.FC<{
   editMode: boolean;
   onChange: (newCmd: Command) => void;
 }> = ({ cmd, onClick, editMode, onChange }) => {
-  const [pos, posSet] = useState(0);
+  const [pos, posSet] = useState<number>(0);
   const styles = useMemo(() => {
     let str =
       "p-1 border border-black rounded leading-none flex gap-2 cursor-pointer";
@@ -44,45 +76,7 @@ const InspectorCmd: React.FC<{
   const onKeyDown: React.KeyboardEventHandler = useCallback(
     (event: React.KeyboardEvent) => {
       // console.log(event.code);
-      if (
-        cmd.type === "M" ||
-        cmd.type === "m" ||
-        cmd.type === "L" ||
-        cmd.type === "l"
-      ) {
-        if (event.code === "ArrowUp") {
-          if (pos === 0) {
-            onChange({ ...cmd, a: cmd.a + 1 });
-          } else {
-            onChange({ ...cmd, b: cmd.b + 1 });
-          }
-        } else if (event.code === "ArrowDown") {
-          if (pos === 0) {
-            onChange({ ...cmd, a: cmd.a - 1 });
-          } else {
-            onChange({ ...cmd, b: cmd.b - 1 });
-          }
-        } else if (event.code === "ArrowLeft") {
-          posSet((pos - 1) % getArgsSize(cmd.type));
-        } else if (event.code === "ArrowRight") {
-          posSet((pos + 1) % getArgsSize(cmd.type));
-        }
-      } else if (
-        cmd.type === "H" ||
-        cmd.type === "h" ||
-        cmd.type === "V" ||
-        cmd.type === "v"
-      ) {
-        if (event.code === "ArrowUp") {
-          onChange({ ...cmd, a: cmd.a + 1 });
-        } else if (event.code === "ArrowDown") {
-          onChange({ ...cmd, a: cmd.a - 1 });
-        } else if (event.code === "ArrowLeft") {
-          posSet((pos - 1) % getArgsSize(cmd.type));
-        } else if (event.code === "ArrowRight") {
-          posSet((pos + 1) % getArgsSize(cmd.type));
-        }
-      }
+      handleKeys({ code: event.code, pos, posSet, cmd, onChange });
     },
     [cmd, pos]
   );
@@ -99,20 +93,32 @@ const InspectorCmd: React.FC<{
       cmd.type === "L" ||
       cmd.type === "l" ? (
         <>
-          <code>{cmd.type}</code>
-          <code>{cmd.a}</code>
-          <code>{cmd.b}</code>
+          <code className={editMode && pos === 0 ? "text-sky-400" : ""}>
+            {cmd.type}
+          </code>
+          <code className={editMode && pos === 1 ? "text-sky-400" : ""}>
+            {cmd.a}
+          </code>
+          <code className={editMode && pos === 2 ? "text-sky-400" : ""}>
+            {cmd.b}
+          </code>
         </>
       ) : cmd.type === "H" ||
         cmd.type === "h" ||
         cmd.type === "V" ||
         cmd.type === "v" ? (
         <>
-          <code>{cmd.type}</code>
-          <code>{cmd.a}</code>
+          <code className={editMode && pos === 0 ? "text-sky-400" : ""}>
+            {cmd.type}
+          </code>
+          <code className={editMode && pos === 1 ? "text-sky-400" : ""}>
+            {cmd.a}
+          </code>
         </>
       ) : (
-        <code>{cmd.type}</code>
+        <code className={editMode && pos === 0 ? "text-sky-400" : ""}>
+          {cmd.type}
+        </code>
       )}
     </div>
   );
