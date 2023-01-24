@@ -11,6 +11,9 @@ export type Command =
     }
   | {
       type: "Z";
+    }
+  | {
+      type: "z";
     };
 
 export type Path = {

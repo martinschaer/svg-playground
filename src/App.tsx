@@ -1,9 +1,10 @@
 import React from "react";
 import "./App.css";
 import Canvas from "./components/canvas/Canvas";
-import { Path } from "./constants/Types";
+import Inspector from "./components/inspector/Inspector";
+import { Command, Path } from "./constants/Types";
 
-const paths: Path[] = [
+const PATHS: Path[] = [
   {
     cmds: [
       { type: "M", a: 10, b: 10 },
@@ -24,9 +25,19 @@ const paths: Path[] = [
 ];
 
 const App: React.FC = () => {
+  const [paths, pathsSet] = React.useState(PATHS);
+  const onChange = React.useCallback(
+    (pathIndex: number, cmdIndex: number, newCmd: Command) => {
+      const updated = [...paths];
+      updated[pathIndex].cmds[cmdIndex] = newCmd;
+      pathsSet(updated);
+    },
+    [paths]
+  );
   return (
-    <div className="bg-gray-200 h-screen w-screen flex justify-center items-center">
+    <div className="bg-gray-200 h-screen w-screen flex justify-center items-center gap-4">
       <Canvas paths={paths} />
+      <Inspector paths={paths} onChange={onChange} />
     </div>
   );
 };
